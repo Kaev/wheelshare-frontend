@@ -1,9 +1,9 @@
 <script setup>
-import WheelCreate from './components/WheelCreate.vue'
+// No imports needed for router-view
 </script>
 
 <template>
-  <WheelCreate />
+  <router-view />
 </template>
 
 <style scoped>

@@ -17,6 +17,9 @@
 
 <script setup>
 
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 const optionsText = ref('')
 const wheelId = ref('')
 const error = ref('')
@@ -38,8 +41,10 @@ async function createWheel() {
     })
     if (!res.ok) throw new Error('Failed to create wheel')
     const data = await res.json()
-    wheelId.value = data.id
-    shareLink.value = `${window.location.origin}/wheel/${data.id}`
+  wheelId.value = data.id
+  shareLink.value = `${window.location.origin}${import.meta.env.BASE_URL}wheel/${data.id}`
+  // Redirect to the wheel room page
+  router.push({ path: `/wheel/${data.id}` })
   } catch (e) {
     error.value = e.message
   }

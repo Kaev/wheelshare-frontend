@@ -10,7 +10,7 @@
     />
     <div class="spin-section">
       <button :disabled="spinning" @click="spinWheel">Spin</button>
-      <div v-if="result !== null" class="result">Result: <b>{{ wheel.options[result] }}</b></div>
+  <div v-if="result !== null && !spinning" class="result">Result: <b>{{ wheel.options[result] }}</b></div>
     </div>
     <div v-if="error" class="error">{{ error }}</div>
   </div>
@@ -18,7 +18,18 @@
 </template>
 
 <script setup>
+// Play win sound when spin completes
+import winSound from '../assets/win.mp3'
+function playTada() {
+  const audio = new Audio(winSound)
+  audio.play()
+}
 
+
+import WheelVisualizer from './WheelVisualizer.vue'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { io } from 'socket.io-client'
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL
 
@@ -45,9 +56,11 @@ onMounted(async () => {
     socket.on('spin-result', (spinResult) => {
       result.value = spinResult
       spinTrigger.value++
+      spinning.value = true
       setTimeout(() => {
         spinning.value = false
-      }, 2200)
+        playTada()
+      }, 5000)
     })
   } catch (e) {
     error.value = e.message
@@ -56,7 +69,7 @@ onMounted(async () => {
 })
 
 function spinWheel() {
-  if (!wheel.value) return
+  if (!wheel.value || spinning.value) return
   spinning.value = true
   // Randomly select an option index
   const spinResult = Math.floor(Math.random() * wheel.value.options.length)

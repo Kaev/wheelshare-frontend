@@ -5,9 +5,4 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   base: '/wheelshare-frontend/',
   plugins: [vue()],
-})
-
-"scripts": {
-  "predeploy": "vite build",
-  "deploy": "gh-pages -d dist"
-}
+});

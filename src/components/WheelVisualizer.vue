@@ -1,24 +1,25 @@
 <template>
   <div class="wheel-visualizer">
     <svg :width="size" :height="size" :viewBox="`0 0 ${size} ${size}`" class="wheel-svg">
-      <g :style="{ transform: `rotate(${rotation}deg)`, transformOrigin: '50% 50%' }">
-        <template v-for="(option, idx) in options">
+      <g
+        :style="{ transform: `rotate(${rotation}deg)`, transformOrigin: '50% 50%', transition: spinningTransition }"
+        @transitionend="onTransitionEnd"
+      >
+        <template v-for="(option, idx) in options" :key="idx">
           <path
-            :key="idx"
             :d="describeArc(size/2, size/2, size/2-10, anglePer * idx, anglePer * (idx+1))"
             :fill="colors[idx % colors.length]"
             stroke="#fff"
             stroke-width="2"
           />
           <text
-            :key="'text-' + idx"
             :x="getTextPos(idx).x"
             :y="getTextPos(idx).y"
             text-anchor="middle"
-            alignment-baseline="middle"
+            dominant-baseline="middle"
             font-size="16"
             fill="#222"
-            :transform="`rotate(${anglePer*idx+anglePer/2} ${size/2} ${size/2})`"
+            :transform="`rotate(${anglePer*idx + anglePer/2} ${getTextPos(idx).x} ${getTextPos(idx).y})`"
           >
             {{ option }}
           </text>
@@ -31,7 +32,11 @@
 </template>
 
 <script setup>
-import { computed, watch, ref } from 'vue'
+
+import { ref, computed, watch } from 'vue'
+// Track if a spin is in progress
+const isSpinning = ref(false)
+const spinningTransition = computed(() => isSpinning.value ? 'transform 5s cubic-bezier(0.33,1,0.68,1)' : 'none')
 
 const props = defineProps({
   options: Array,
@@ -77,16 +82,27 @@ function getTextPos(idx) {
 
 watch(() => props.spinTrigger, (newVal, oldVal) => {
   if (props.spinning && typeof props.result === 'number') {
-    // Animate spin
-    const spins = 6
-    const finalAngle = 360 * spins - anglePer * props.result - anglePer/2
-    rotation.value = 0
+    // Animate spin for 5 seconds, always land with result at 9 o'clock (left)
+    const spins = 8
+    // 9 o'clock is -90deg, so we want the result to land there
+    const finalAngle = 360 * spins - anglePer * props.result - 90
     if (spinningTimeout) clearTimeout(spinningTimeout)
+    isSpinning.value = true
     setTimeout(() => {
       rotation.value = finalAngle
     }, 20)
   }
 })
+
+function onTransitionEnd() {
+  // After spin, reset rotation to the minimal equivalent angle for next spin
+  if (isSpinning.value) {
+    const spins = 8
+    const minimalAngle = (360 - anglePer * props.result - 90) % 360
+    rotation.value = minimalAngle
+    isSpinning.value = false
+  }
+}
 </script>
 
 <style scoped>
