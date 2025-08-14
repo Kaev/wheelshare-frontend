@@ -86,7 +86,6 @@ function spinWheel() {
 
 <style scoped>
 .wheel-room-container {
-  max-width: 400px;
   margin: 2rem auto;
   padding: 2rem;
   background: #fff;

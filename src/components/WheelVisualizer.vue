@@ -1,28 +1,28 @@
 <template>
   <div class="wheel-visualizer">
-    <svg :width="size" :height="size" :viewBox="`0 0 ${size} ${size}`" class="wheel-svg">
+  <svg :width="svgSize" :height="svgSize" :viewBox="`0 0 ${svgSize} ${svgSize}`" class="wheel-svg">
       <g
         :style="{ transform: `rotate(${rotation}deg)`, transformOrigin: '50% 50%', transition: spinningTransition }"
         @transitionend="onTransitionEnd"
       >
         <template v-for="(option, idx) in options" :key="idx">
           <path
-            :d="describeArc(size/2, size/2, size/2-10, anglePer * idx, anglePer * (idx+1))"
+            :d="describeArc(svgSize/2, svgSize/2, wheelRadius, anglePer * idx, anglePer * (idx+1))"
             :fill="colors[idx % colors.length]"
             stroke="#fff"
             stroke-width="2"
           />
-          <text
-            :x="getTextPos(idx).x"
-            :y="getTextPos(idx).y"
-            text-anchor="middle"
-            dominant-baseline="middle"
-            font-size="16"
-            fill="#222"
-            :transform="`rotate(${anglePer*idx + anglePer/2} ${getTextPos(idx).x} ${getTextPos(idx).y})`"
-          >
-            {{ option }}
-          </text>
+          <g :transform="`translate(${getTextPos(idx).x},${getTextPos(idx).y}) rotate(${anglePer*idx + anglePer/2})`">
+            <text
+              text-anchor="middle"
+              dominant-baseline="middle"
+              font-size="20"
+              fill="#222"
+              :style="{ writingMode: 'tb', glyphOrientationVertical: 'auto', letterSpacing: '2px', fontWeight: 600, userSelect: 'none' }"
+            >
+              {{ getTruncatedOption(option, idx) }}
+            </text>
+          </g>
         </template>
       </g>
       <!-- Pointer -->
@@ -45,10 +45,12 @@ const props = defineProps({
   spinTrigger: Number // incremented to trigger spin
 })
 
-const size = 320
+// Make the wheel 75% of the screen size while maintaining aspect ratio
+const svgSize = Math.min(window.innerWidth, window.innerHeight) * 0.75;
+const wheelRadius = svgSize / 2 - 20;
 const anglePer = 360 / props.options.length
 const colors = ['#f6d365', '#fda085', '#a1c4fd', '#c2e9fb', '#fbc2eb', '#fdcbf1', '#b2fefa', '#f5f7fa']
-const pointerPoints = `${size/2-10},10 ${size/2+10},10 ${size/2},40`
+const pointerPoints = `${svgSize/2-20},20 ${svgSize/2+20},20 ${svgSize/2},60`
 
 const rotation = ref(0)
 let spinningTimeout = null
@@ -75,9 +77,20 @@ function getTextPos(idx) {
   const angle = anglePer * idx + anglePer/2
   const rad = (angle-90) * Math.PI / 180.0
   return {
-    x: size/2 + (size/2-50) * Math.cos(rad),
-    y: size/2 + (size/2-50) * Math.sin(rad)
+    x: svgSize/2 + (wheelRadius-60) * Math.cos(rad),
+    y: svgSize/2 + (wheelRadius-60) * Math.sin(rad)
   }
+}
+
+// Truncate option text if it won't fit vertically in the slice
+function getTruncatedOption(option, idx) {
+  // Estimate max chars: slice arc length / font size
+  const arcLength = (Math.PI * wheelRadius * anglePer) / 180;
+  const maxChars = Math.floor((arcLength / 20) * 1.2); // fudge factor for vertical
+  if (option.length > maxChars) {
+    return option.slice(0, maxChars - 1) + '…';
+  }
+  return option;
 }
 
 // Store the backend-provided landingAngle for the current spin
@@ -111,11 +124,19 @@ function onTransitionEnd() {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 2rem 0;
+  width: 100%;
+  height: 75vh;
+  margin: 0;
+  padding: 0;
 }
 .wheel-svg {
-  background: #f6f8fa;
   border-radius: 50%;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  width: 75vmin;
+  height: 75vmin;
+  min-width: 500px;
+  min-height: 500px;
+  background: none;
+  box-shadow: none;
+  display: block;
 }
 </style>
