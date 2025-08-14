@@ -7,6 +7,7 @@
       :spinning="spinning"
       :result="result"
       :spinTrigger="spinTrigger"
+      :offset="offset"
     />
     <div class="spin-section">
       <button :disabled="spinning" @click="spinWheel">Spin</button>
@@ -41,6 +42,7 @@ const error = ref('')
 const spinning = ref(false)
 const result = ref(null)
 const spinTrigger = ref(0)
+const offset = ref(0)
 let socket
 
 onMounted(async () => {
@@ -53,8 +55,9 @@ onMounted(async () => {
     // Connect to Socket.IO and join room
     socket = io(backendUrl)
     socket.emit('join-wheel', wheel.value.id)
-    socket.on('spin-result', (spinResult) => {
-      result.value = spinResult
+    socket.on('spin-result', ({ result: backendResult, offset: backendOffset }) => {
+      result.value = backendResult
+      offset.value = backendOffset
       spinTrigger.value++
       spinning.value = true
       setTimeout(() => {
@@ -71,10 +74,8 @@ onMounted(async () => {
 function spinWheel() {
   if (!wheel.value || spinning.value) return
   spinning.value = true
-  // Randomly select an option index
-  const spinResult = Math.floor(Math.random() * wheel.value.options.length)
-  // Emit spin event to backend
-  socket.emit('spin', { wheelId: wheel.value.id, result: spinResult })
+  // Request spin from backend (no result or offset sent)
+  socket.emit('spin', { wheelId: wheel.value.id })
 }
 </script>
 
