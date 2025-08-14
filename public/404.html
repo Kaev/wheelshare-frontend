@@ -1,4 +1,5 @@
 <script>
   // Redirect all not-found routes to index.html for SPA routing
-  location.replace('/wheelshare-frontend/' + location.search + location.hash);
+  var path = location.pathname.replace(/^\/wheelshare-frontend\//, '');
+  location.replace('/wheelshare-frontend/?redirect=/' + path + location.search + location.hash);
 </script>
