@@ -1,3 +1,5 @@
+# DISCLAIMER
+This entire frontend is fully vibecoded. I didn't write a single line of code in this project. Don't take this project serious, i just wanted to see how well GitHub Copilot works for such a task.
 
 # Wheelshare Frontend
 
