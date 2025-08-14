@@ -41,9 +41,8 @@ const spinningTransition = computed(() => isSpinning.value ? 'transform 5s cubic
 const props = defineProps({
   options: Array,
   spinning: Boolean,
-  result: Number,
-  spinTrigger: Number, // incremented to trigger spin
-  offset: { type: Number, default: 0 }
+  landingAngle: Number,
+  spinTrigger: Number // incremented to trigger spin
 })
 
 const size = 320
@@ -81,29 +80,28 @@ function getTextPos(idx) {
   }
 }
 
-// Store the backend-provided offset for the current spin
-let currentOffset = 0
+// Store the backend-provided landingAngle for the current spin
+let currentLandingAngle = 0;
 watch(() => props.spinTrigger, (newVal, oldVal) => {
-  if (props.spinning && typeof props.result === 'number') {
-    const spins = 8
-    currentOffset = props.offset || 0
-    // 9 o'clock is -90deg, so we want the result to land there
-    const finalAngle = 360 * spins - anglePer * props.result - 90 + anglePer / 2 + currentOffset
-    if (spinningTimeout) clearTimeout(spinningTimeout)
-    isSpinning.value = true
+  if (props.spinning && typeof props.landingAngle === 'number') {
+    const spins = 8;
+    currentLandingAngle = props.landingAngle;
+    // Animate to the landing angle (pointer at 9 o'clock)
+    const finalAngle = 360 * spins - currentLandingAngle;
+    if (spinningTimeout) clearTimeout(spinningTimeout);
+    isSpinning.value = true;
     setTimeout(() => {
-      rotation.value = finalAngle
-    }, 20)
+      rotation.value = finalAngle;
+    }, 20);
   }
-})
+});
 
 function onTransitionEnd() {
   // After spin, reset rotation to the minimal equivalent angle for next spin
   if (isSpinning.value) {
-    const spins = 8
-    const minimalAngle = (360 - anglePer * props.result - 90 + anglePer / 2 + currentOffset) % 360
-    rotation.value = minimalAngle
-    isSpinning.value = false
+    const minimalAngle = (360 - currentLandingAngle) % 360;
+    rotation.value = minimalAngle;
+    isSpinning.value = false;
   }
 }
 </script>

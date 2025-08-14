@@ -5,13 +5,14 @@
       v-if="wheel"
       :options="wheel.options"
       :spinning="spinning"
-      :result="result"
+      :landingAngle="landingAngle"
       :spinTrigger="spinTrigger"
-      :offset="offset"
     />
     <div class="spin-section">
       <button :disabled="spinning" @click="spinWheel">Spin</button>
-  <div v-if="result !== null && !spinning" class="result">Result: <b>{{ wheel.options[result] }}</b></div>
+  <div v-if="resultIdx !== null && !spinning" class="result">
+    Result: <b>{{ wheel.options[resultIdx] }}</b>
+  </div>
     </div>
     <div v-if="error" class="error">{{ error }}</div>
   </div>
@@ -20,6 +21,9 @@
 
 <script setup>
 // Play win sound when spin completes
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { io } from 'socket.io-client'
 import winSound from '../assets/win.mp3'
 function playTada() {
   const audio = new Audio(winSound)
@@ -27,22 +31,19 @@ function playTada() {
 }
 
 
+
 import WheelVisualizer from './WheelVisualizer.vue'
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { io } from 'socket.io-client'
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL
-
 const route = useRoute()
 const wheel = ref(null)
 const loaded = ref(false)
 const error = ref('')
 
 const spinning = ref(false)
-const result = ref(null)
+const landingAngle = ref(null)
+const resultIdx = ref(null)
 const spinTrigger = ref(0)
-const offset = ref(0)
 let socket
 
 onMounted(async () => {
@@ -55,15 +56,16 @@ onMounted(async () => {
     // Connect to Socket.IO and join room
     socket = io(backendUrl)
     socket.emit('join-wheel', wheel.value.id)
-    socket.on('spin-result', ({ result: backendResult, offset: backendOffset }) => {
-      result.value = backendResult
-      offset.value = backendOffset
-      spinTrigger.value++
-      spinning.value = true
+    socket.on('spin-result', ({ landingAngle: backendLandingAngle, resultIdx: backendResultIdx }) => {
+      console.log('spin-result received:', { backendLandingAngle, backendResultIdx });
+      landingAngle.value = backendLandingAngle;
+      resultIdx.value = backendResultIdx;
+      spinTrigger.value++;
+      spinning.value = true;
       setTimeout(() => {
-        spinning.value = false
-        playTada()
-      }, 5000)
+        spinning.value = false;
+        playTada();
+      }, 5000);
     })
   } catch (e) {
     error.value = e.message
@@ -74,9 +76,12 @@ onMounted(async () => {
 function spinWheel() {
   if (!wheel.value || spinning.value) return
   spinning.value = true
+  resultIdx.value = null
   // Request spin from backend (no result or offset sent)
   socket.emit('spin', { wheelId: wheel.value.id })
 }
+
+
 </script>
 
 <style scoped>
